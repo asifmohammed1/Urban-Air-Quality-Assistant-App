@@ -1,0 +1,58 @@
+﻿Prerequisites
+Before submitting, ensure the following:
+1. Your desired AI platform is downloaded and set up
+
+2. Git is installed and configured on your system
+ → Refer: Set up Git
+
+3. You have an active GitHub account
+ → If you want to create a new account, refer to: Create a GitHub Account
+________________
+
+
+Important Rules
+   * You have a maximum of 3 submission attempts
+   * The repository size must be less than 10 MB
+   * The GitHub repository must be public
+   * The repository should contain only one branch (no multiple branches allowed)
+________________
+
+
+Steps to Make a Submission
+   1. Go to GitHub and create a new repository
+
+      * How to guide refer: Creating a new repository - GitHub Docs 
+      * Ensure the repository is public
+
+         2. Open the desired AI platform
+
+
+         3. Clone the GitHub repository inside AI platform
+
+
+         4. Start prompting and coding using your AI platform
+
+
+         5. Once satisfied with your progress:
+
+            * Push your code to the GitHub repository
+            * Ensure there are no multiple branches (all work should be in a single branch)
+
+               6. After pushing the code:
+
+                  * Copy the public GitHub repository link
+
+                     7. Log in to the Hack2skill Portal (Link)
+  
+
+                     8. Navigate to the Prompt Wars Dashboard
+  
+
+
+
+                        9. Go to the Submissions Tab
+  
+
+
+
+10. Scroll down slightly to see the submission fields and the submit button
