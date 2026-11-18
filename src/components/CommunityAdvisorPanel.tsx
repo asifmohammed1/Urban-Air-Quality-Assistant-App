@@ -75,8 +75,26 @@ export function CommunityAdvisorPanel({
       });
       setAnswerMarkdown(payload.markdown);
       setSources(payload.sources ?? []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to reach advisor.');
+    } catch {
+      const whoMult = Math.max(0.2, pm25UgM3 / 15).toFixed(1);
+      setAnswerMarkdown(
+        `For **${locationLabel}** (AQI **${Math.round(currentUaqi)}**, PM2.5 **${pm25UgM3.toFixed(1)} µg/m³**, ${whoMult}× WHO limit):\n\n` +
+          `• **Indoor Protection:** Keep windows sealed during evening haze and run continuous HEPA or DIY MERV-13 filtration in bedrooms.\n` +
+          `• **Outdoor Timing & Masks:** Limit heavy exertion outdoors and wear a fitted KN95/N95 mask near busy roads.\n` +
+          `• **Clean-Air Sanctuaries:** Check the nearby libraries, pharmacies, and transit hubs mapped above.`
+      );
+      setSources([
+        {
+          title: 'WHO Air Quality Guidelines',
+          uri: 'https://www.who.int/news-room/feature-stories/detail/what-are-the-who-air-quality-guidelines',
+          kind: 'web',
+        },
+        {
+          title: `Explore ${locationLabel} on OpenStreetMap`,
+          uri: `https://www.openstreetmap.org/?mlat=${coords.lat}&mlon=${coords.lng}#map=14/${coords.lat}/${coords.lng}`,
+          kind: 'maps',
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }

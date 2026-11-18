@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { safeFetchJson } from '../lib/http.ts';
+import { HttpFetchError, safeFetchJson } from '../lib/http.ts';
+import {
+  buildBrowserFallbackPlan,
+  fetchDirectBrowserTelemetry,
+  geocodeDirectBrowser,
+} from '../lib/openTelemetryFallback.ts';
 import {
   DEFAULT_HOUSEHOLD_PROFILE,
   getPrimaryAqiContext,
@@ -145,11 +150,20 @@ export function useAirQualityDashboard() {
     setError(null);
 
     try {
-      const data = await safeFetchJson<EnvironmentTelemetry>('/api/environment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(targetCoords),
-      });
+      let data: EnvironmentTelemetry;
+      try {
+        data = await safeFetchJson<EnvironmentTelemetry>('/api/environment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(targetCoords),
+        });
+      } catch (apiErr) {
+        if (apiErr instanceof HttpFetchError && (apiErr.status === 404 || apiErr.status >= 500)) {
+          data = await fetchDirectBrowserTelemetry(targetCoords);
+        } else {
+          throw apiErr;
+        }
+      }
 
       setTelemetry(data);
       setLocationLabel(
@@ -185,27 +199,40 @@ export function useAirQualityDashboard() {
         const category = metric?.category ?? 'Moderate air quality';
         const dominantPollutant = metric?.dominantPollutant ?? 'pm25';
 
-        const nextPlan = await safeFetchJson<AdvisorPlan>('/api/advisor/plan', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        let nextPlan: AdvisorPlan;
+        try {
+          nextPlan = await safeFetchJson<AdvisorPlan>('/api/advisor/plan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              locationName: activeLocationName,
+              coordinates: activeCoords,
+              householdProfile: activeProfile,
+              currentUaqi: uaqi,
+              aqiScale: scale,
+              currentCategory: category,
+              dominantPollutant,
+              pm25UgM3: pm25,
+              no2Ppb: no2,
+              inversionSeverity: currentTelemetry.inversionRisk.severity,
+              inversionSummary: currentTelemetry.inversionRisk.summary,
+              cleanestWindowLabel: currentTelemetry.forecastWindows.cleanestWindow?.label ?? null,
+              peakSmogWindowLabel: currentTelemetry.forecastWindows.peakSmogWindow?.label ?? null,
+              windSpeedKmh: currentTelemetry.weather?.windSpeedKmh ?? 8,
+              temperatureC: currentTelemetry.weather?.temperatureC ?? 6,
+            }),
+          });
+        } catch {
+          nextPlan = buildBrowserFallbackPlan({
             locationName: activeLocationName,
-            coordinates: activeCoords,
-            householdProfile: activeProfile,
-            currentUaqi: uaqi,
-            aqiScale: scale,
-            currentCategory: category,
-            dominantPollutant,
+            profile: activeProfile,
             pm25UgM3: pm25,
-            no2Ppb: no2,
-            inversionSeverity: currentTelemetry.inversionRisk.severity,
+            aqi: uaqi,
+            cleanWindow: currentTelemetry.forecastWindows.cleanestWindow?.label ?? null,
+            peakWindow: currentTelemetry.forecastWindows.peakSmogWindow?.label ?? null,
             inversionSummary: currentTelemetry.inversionRisk.summary,
-            cleanestWindowLabel: currentTelemetry.forecastWindows.cleanestWindow?.label ?? null,
-            peakSmogWindowLabel: currentTelemetry.forecastWindows.peakSmogWindow?.label ?? null,
-            windSpeedKmh: currentTelemetry.weather?.windSpeedKmh ?? 8,
-            temperatureC: currentTelemetry.weather?.temperatureC ?? 6,
-          }),
-        });
+          });
+        }
 
         setPlan(nextPlan);
       } catch (err) {
@@ -248,15 +275,24 @@ export function useAirQualityDashboard() {
 
   const searchAddress = useCallback(async (query: string) => {
     setError(null);
-    const payload = await safeFetchJson<{
-      lat: number;
-      lng: number;
-      formattedAddress: string;
-    }>('/api/geocode', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ address: query }),
-    });
+    let payload: { lat: number; lng: number; formattedAddress: string };
+    try {
+      payload = await safeFetchJson<{
+        lat: number;
+        lng: number;
+        formattedAddress: string;
+      }>('/api/geocode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: query }),
+      });
+    } catch (apiErr) {
+      if (apiErr instanceof HttpFetchError && (apiErr.status === 404 || apiErr.status >= 500)) {
+        payload = await geocodeDirectBrowser(query);
+      } else {
+        throw apiErr;
+      }
+    }
     setLocationLabel(payload.formattedAddress);
     setCoords({ lat: payload.lat, lng: payload.lng });
   }, []);
