@@ -2,6 +2,9 @@
 
 ClearHearth is a GenAI-powered environmental health and low-emission lifestyle assistant built to help **families and vulnerable households** navigate severe winter smog and urban air pollution.
 
+- **Live Demo:** https://urban-air-quality-assistant-app.vercel.app/
+- **GitHub Repository:** https://github.com/asifmohammed1/Urban-Air-Quality-Assistant-App
+
 ---
 
 ## 1. Chosen Challenge Vertical & Persona
